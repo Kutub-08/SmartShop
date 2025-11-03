@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartShop - Online Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .nav-link {
+            color: #4b5563;
+            transition: color 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        .cart-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .product-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .star-rating {
+            color: #fbbf24;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation bar at the top -->
+    <nav id="navbar" class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <h1 class="text-2xl font-bold text-blue-600">SmartShop</h1>
+                
+                <!-- Main navigation links -->
+                <div class="hidden md:flex md:absolute md:left-1/2 md:transform md:-translate-x-1/2 space-x-6">
+                    <a href="#home" class="nav-link active">Home</a>
+                    <a href="#products" class="nav-link">Products</a>
+                    <a href="#reviews" class="nav-link">Reviews</a>
+                    <a href="#contact" class="nav-link">Contact</a>
+                </div>
+
+                <!-- Right side icons -->
+                <div class="flex items-center space-x-4">
+                    <!-- Show current wallet balance -->
+                    <div id="walletDisplay" class="flex items-center space-x-2 mr-2">
+                        <i class="fas fa-wallet text-gray-600"></i>
+                        <span id="walletAmount" class="text-sm font-medium text-gray-700">BDT 1000</span>
+                    </div>
+                    <!-- Shopping cart button -->
+                    <div class="relative">
+                        <button id="cartBtn" class="p-2">
+                            <i class="fas fa-shopping-cart text-gray-600"></i>
+                            <span id="cartCount" class="cart-badge">0</span>
+                        </button>
+                    </div>
+                    <!-- Mobile menu button -->
+                    <button id="menuBtn" class="md:hidden p-2">
+                        <i class="fas fa-bars text-gray-600"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile menu (hidden by default) -->
+            <div id="mobileMenu" class="md:hidden hidden pb-4">
+                <a href="#home" class="block py-2 nav-link active">Home</a>
+                <a href="#products" class="block py-2 nav-link">Products</a>
+                <a href="#reviews" class="block py-2 nav-link">Reviews</a>
+                <a href="#contact" class="block py-2 nav-link">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Banner section with sliding images -->
+    <section id="home" class="py-6 bg-blue-50">
+        <div class="container mx-auto px-4">
+            <div class="relative overflow-hidden rounded-lg h-64">
+                <div id="banner" class="flex transition-transform duration-500">
+                    <!-- Banner images will be loaded here -->
+                </div>
+                <!-- Banner navigation buttons -->
+                <button id="prevBanner" class="absolute left-2 top-1/2 bg-white/80 p-2 rounded-full">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button id="nextBanner" class="absolute right-2 top-1/2 bg-white/80 p-2 rounded-full">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products section -->
+    <section id="products" class="py-12">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-8">Our Products</h2>
+
+            <!-- Search and filter options -->
+            <div class="mb-6 flex flex-col md:flex-row gap-4">
+                <input type="text" id="search" placeholder="Search products..." class="flex-1 p-3 border rounded-lg">
+                <select id="sort" class="p-3 border rounded-lg">
+                    <option value="default">Sort by</option>
+                    <option value="high">Price: High to Low</option>
+                    <option value="low">Price: Low to High</option>
+                </select>
+            </div>
+
+            <!-- Products grid -->
+            <div id="productsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Products will be loaded here -->
+            </div>
+
+            <!-- Loading indicator -->
+            <div id="loading" class="text-center py-8">
+                <i class="fas fa-spinner fa-spin text-2xl text-blue-500"></i>
+                <p class="mt-2">Loading products...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Shopping cart modal (hidden by default) -->
+    <div id="cartModal" class="fixed inset-0 bg-black/50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg w-full max-w-2xl">
+                <div class="flex justify-between items-center p-4 border-b">
+                    <h3 class="text-xl font-bold">Shopping Cart</h3>
+                    <button id="closeCart" class="p-2">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Cart items list -->
+                <div class="p-4 max-h-96 overflow-y-auto">
+                    <div id="cartItems"></div>
+                    <div id="emptyCart" class="text-center py-8 text-gray-500">
+                        <i class="fas fa-shopping-cart text-4xl mb-4"></i>
+                        <p>Your cart is empty</p>
+                    </div>
+                </div>
+
+                <!-- Cart totals and actions -->
+                <div class="p-4 border-t">
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">BDT 0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Delivery:</span>
+                            <span>BDT 50</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Shipping:</span>
+                            <span>BDT 30</span>
+                        </div>
+                        <!-- Coupon code input -->
+                        <div class="flex gap-2 items-center">
+                            <input type="text" id="coupon" placeholder="Coupon code" class="flex-1 p-2 border rounded">
+                            <button id="applyCoupon" class="p-2 bg-blue-500 text-white rounded">Apply</button>
+                        </div>
+                        <!-- Messages will appear here -->
+                        <div id="cartMessage" class="mt-3 hidden text-center p-2 rounded"></div>
+                        <!-- Quick add money buttons -->
+                        <div class="mt-3">
+                            <h4 class="font-semibold mb-2">Add Money</h4>
+                            <div class="flex gap-2">
+                                <button id="add100" class="p-2 border rounded bg-white hover:bg-gray-50">BDT 100</button>
+                                <button id="add500" class="p-2 border rounded bg-white hover:bg-gray-50">BDT 500</button>
+                                <button id="add1000" class="p-2 border rounded bg-white hover:bg-gray-50">BDT 1000</button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-green-600">
+                            <span>Discount:</span>
+                            <span id="discount">-BDT 0</span>
+                        </div>
+                    </div>
+
+                    <!-- Total and checkout -->
+                    <div class="flex justify-between items-center py-4 border-t">
+                        <span class="text-lg font-bold">Total:</span>
+                        <span id="total" class="text-xl font-bold text-blue-600">BDT 80</span>
+                    </div>
+
+                    <button id="checkout" class="w-full p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        Checkout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer reviews section -->
+    <section id="reviews" class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-8">Customer Reviews</h2>
+            <div class="relative overflow-hidden rounded-lg">
+                <div id="reviewsContainer" class="flex transition-transform duration-500">
+                    <!-- Reviews will be loaded here -->
+                </div>
+                <button id="prevReview" class="absolute left-2 top-1/2 bg-white p-2 rounded-full">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button id="nextReview" class="absolute right-2 top-1/2 bg-white p-2 rounded-full">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- About us section -->
+    <section id="about" class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-8">About Us</h2>
+            <div class="max-w-2xl mx-auto text-center">
+                <p class="text-gray-600 leading-relaxed">
+                    SmartShop sources fresh produce directly from trusted local farms and delivers them to your home. We focus on quality, safety, and speedy delivery.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact form section -->
+    <section id="contact" class="py-12">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-8">Contact Us</h2>
+            <div class="max-w-md mx-auto">
+                <form id="contactForm" class="space-y-4">
+                    <input type="text" id="name" placeholder="Your Name" class="w-full p-3 border rounded-lg" required>
+                    <input type="email" id="email" placeholder="Your Email" class="w-full p-3 border rounded-lg" required>
+                    <textarea id="message" placeholder="Your Message" rows="4" class="w-full p-3 border rounded-lg" required></textarea>
+                    <button type="submit" class="w-full p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        Send Message
+                    </button>
+                </form>
+                <!-- Form messages will appear here -->
+                <div id="formMessage" class="mt-4 p-3 bg-green-100 text-green-700 rounded-lg hidden"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2025 SmartShop. All rights reserved.</p>
+            <button id="backToTop" class="mt-4 px-4 py-2 bg-blue-500 rounded-lg hover:bg-blue-600">
+                Back to Top
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        // Store all our app data here
+        let products = [];
+        let cart = [];
+        let bannerIndex = 0;
+        let reviewIndex = 0;
+        let couponUsed = false;
+        let autoSlideInterval;
+        let wallet = 1000; // Starting money
+
+        // Get all the elements we need from the page
+        const bannerBox = document.getElementById("banner");
+        const prevBanner = document.getElementById("prevBanner");
+        const nextBanner = document.getElementById("nextBanner");
+        const productBox = document.getElementById("productsGrid");
+        const cartBtn = document.getElementById("cartBtn");
+        const cartModal = document.getElementById("cartModal");
+        const closeCart = document.getElementById("closeCart");
+        const cartList = document.getElementById("cartItems");
+        const emptyMsg = document.getElementById("emptyCart");
+        const cartCount = document.getElementById("cartCount");
+        const subtotal = document.getElementById("subtotal");
+        const discount = document.getElementById("discount");
+        const total = document.getElementById("total");
+        const couponInput = document.getElementById("coupon");
+        const applyBtn = document.getElementById("applyCoupon");
+        const checkoutBtn = document.getElementById("checkout");
+        const walletAmountEl = document.getElementById("walletAmount");
+        const add100Btn = document.getElementById("add100");
+        const add500Btn = document.getElementById("add500");
+        const add1000Btn = document.getElementById("add1000");
+        const reviewsBox = document.getElementById("reviewsContainer");
+        const prevReview = document.getElementById("prevReview");
+        const nextReview = document.getElementById("nextReview");
+        const searchInput = document.getElementById("search");
+        const sortSelect = document.getElementById("sort");
+        const contactForm = document.getElementById("contactForm");
+        const msgBox = document.getElementById("formMessage");
+        const cartMessage = document.getElementById("cartMessage");
+        const backToTop = document.getElementById("backToTop");
+        const mobileMenu = document.getElementById("mobileMenu");
+        const menuBtn = document.getElementById("menuBtn");
+
+        // When the page loads, set everything up
+        document.addEventListener("DOMContentLoaded", function() {
+            loadBanners();
+            loadProducts();
+            loadReviews();
+            setupEventListeners();
+            updateWalletDisplay();
+            updateActiveNav();
+        });
+
+        // Set up all the click handlers and event listeners
+        function setupEventListeners() {
+            // Navigation
+            menuBtn.addEventListener('click', toggleMobileMenu);
+            backToTop.addEventListener('click', scrollToTop);
+            
+            // Banner controls
+            prevBanner.addEventListener('click', showPrevBanner);
+            nextBanner.addEventListener('click', showNextBanner);
+            
+            // Cart controls
+            cartBtn.addEventListener('click', openCart);
+            closeCart.addEventListener('click', closeCartModal);
+            applyBtn.addEventListener('click', applyCoupon);
+            checkoutBtn.addEventListener('click', processCheckout);
+            
+            // Review controls
+            prevReview.addEventListener('click', showPrevReview);
+            nextReview.addEventListener('click', showNextReview);
+            
+            // Product search and sort
+            searchInput.addEventListener('input', filterProducts);
+            sortSelect.addEventListener('change', filterProducts);
+            
+            // Contact form
+            contactForm.addEventListener('submit', handleContactSubmit);
+            
+            // Navigation links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', handleNavClick);
+            });
+            
+            // Auto slide banners
+            startAutoSlide();
+            
+            // Set up section observer for active nav highlighting
+            initSectionObserver();
+
+            // Add money buttons
+            if (add100Btn) add100Btn.addEventListener('click', () => addMoney(100));
+            if (add500Btn) add500Btn.addEventListener('click', () => addMoney(500));
+            if (add1000Btn) add1000Btn.addEventListener('click', () => addMoney(1000));
+        }
+
+        // Toggle mobile menu on small screens
+        function toggleMobileMenu() {
+            mobileMenu.classList.toggle('hidden');
+        }
+
+        // Scroll back to top of page
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Handle when someone clicks a navigation link
+        function handleNavClick(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetSection = document.getElementById(targetId);
+            
+            if (targetSection) {
+                targetSection.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            // Close mobile menu if it's open
+            mobileMenu.classList.add('hidden');
+            
+            // Make sure the clicked link looks active
+            const href = this.getAttribute('href');
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            document.querySelectorAll(`.nav-link[href="${href}"]`).forEach(link => link.classList.add('active'));
+        }
+
+        // Update which nav link is highlighted based on scroll position
+        function updateActiveNav() {
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            let currentSection = '';
+            const scrollPosition = window.scrollY + 100;
+            
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                
+                if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                    currentSection = section.getAttribute('id');
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${currentSection}`) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        // More accurate way to track which section is visible
+        function initSectionObserver() {
+            const sections = document.querySelectorAll('section[id]');
+            if (!sections.length) return;
+
+            const options = {
+                root: null,
+                rootMargin: '-80px 0px -40% 0px',
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                const visible = entries.filter(e => e.isIntersecting);
+                if (!visible.length) return;
+
+                visible.sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+                const topEntry = visible[0];
+                const id = topEntry.target.getAttribute('id');
+
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+                });
+            }, options);
+
+            sections.forEach(s => observer.observe(s));
+
+            // If page opened with a hash, highlight that section
+            if (location.hash) {
+                const hash = location.hash;
+                document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.getAttribute('href') === hash));
+            } else {
+                updateActiveNav();
+            }
+        }
+
+        // Update wallet display with current balance
+        function updateWalletDisplay() {
+            if (!walletAmountEl) return;
+            walletAmountEl.textContent = `BDT ${wallet}`;
+        }
+
+        // Add money to wallet
+        function addMoney(amount) {
+            wallet += amount;
+            updateWalletDisplay();
+            showMessage(`Added BDT ${amount} to wallet. New balance: BDT ${wallet}`, 'success', cartMessage);
+        }
+
+        // Load banner images and text
+        function loadBanners() {
+            const banners = [
+                { 
+                    img: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=800", 
+                    title: "Fashion Sale", 
+                    text: "Up to 70% Off!" 
+                },
+                { 
+                    img: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=800", 
+                    title: "Winter Collection", 
+                    text: "Discover New Styles" 
+                },
+                { 
+                    img: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=800", 
+                    title: "Free Delivery", 
+                    text: "On orders over BDT 100" 
+                },
+                { 
+                    img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800", 
+                    title: "Special Deals", 
+                    text: "Shop Now!" 
+                }
+            ];
+
+            bannerBox.innerHTML = banners.map(banner => `
+                <div class="min-w-full h-64 flex items-center justify-center bg-cover bg-center"
+                     style="background-image:url('${banner.img}')">
+                    <div class="bg-black/40 p-6 rounded text-center text-white">
+                        <h2 class="text-2xl font-bold">${banner.title}</h2>
+                        <p>${banner.text}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Show next banner
+        function showNextBanner() {
+            const totalBanners = bannerBox.children.length;
+            bannerIndex = (bannerIndex + 1) % totalBanners;
+            updateBannerPosition();
+            resetAutoSlide();
+        }
+
+        // Show previous banner
+        function showPrevBanner() {
+            const totalBanners = bannerBox.children.length;
+            bannerIndex = (bannerIndex - 1 + totalBanners) % totalBanners;
+            updateBannerPosition();
+            resetAutoSlide();
+        }
+
+        // Move banners to show the current one
+        function updateBannerPosition() {
+            bannerBox.style.transform = `translateX(-${bannerIndex * 100}%)`;
+        }
+
+        // Start automatic banner sliding
+        function startAutoSlide() {
+            autoSlideInterval = setInterval(showNextBanner, 4000);
+        }
+
+        // Reset the auto slide timer
+        function resetAutoSlide() {
+            clearInterval(autoSlideInterval);
+            startAutoSlide();
+        }
+
+        // Get products from the API
+        async function loadProducts() {
+            try {
+                const response = await fetch("https://fakestoreapi.com/products");
+                products = await response.json();
+                displayProducts(products);
+                document.getElementById('loading').classList.add('hidden');
+            } catch (error) {
+                productBox.innerHTML = '<p class="text-red-500 text-center">Failed to load products. Please try again later.</p>';
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        // Show products on the page
+        function displayProducts(productsToShow) {
+            productBox.innerHTML = productsToShow.map(product => `
+                <div class="product-card border rounded p-4 shadow bg-white">
+                    <img src="${product.image}" alt="${product.title}" class="h-40 mx-auto object-contain mb-2">
+                    <h3 class="font-semibold mb-1 line-clamp-2">${product.title}</h3>
+                    <div class="flex items-center mb-2">
+                        <div class="star-rating">
+                            ${generateStarRating(product.rating.rate)}
+                        </div>
+                        <span class="text-sm text-gray-600 ml-2">(${product.rating.count})</span>
+                    </div>
+                    <p class="text-gray-600 mb-2">BDT ${product.price}</p>
+                    <button class="add-to-cart bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600 transition" 
+                            data-id="${product.id}">
+                        Add to Cart
+                    </button>
+                </div>
+            `).join('');
+
+            // Add click handlers to all the Add to Cart buttons
+            document.querySelectorAll('.add-to-cart').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = parseInt(this.getAttribute('data-id'));
+                    addToCart(productId);
+                });
+            });
+        }
+
+        // Create star rating display
+        function generateStarRating(rating) {
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 >= 0.5;
+            
+            let stars = '';
+            for (let i = 0; i < fullStars; i++) {
+                stars += '<i class="fas fa-star"></i>';
+            }
+            if (hasHalfStar) {
+                stars += '<i class="fas fa-star-half-alt"></i>';
+            }
+            const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+            for (let i = 0; i < emptyStars; i++) {
+                stars += '<i class="far fa-star"></i>';
+            }
+            
+            return stars;
+        }
+
+        // Filter and sort products based on user input
+        function filterProducts() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const sortOption = sortSelect.value;
+            
+            let filteredProducts = [...products];
+            
+            // Apply search if user typed something
+            if (searchTerm) {
+                filteredProducts = filteredProducts.filter(product => 
+                    product.title.toLowerCase().includes(searchTerm) || 
+                    product.description.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Sort products if user selected an option
+            if (sortOption === 'high') {
+                filteredProducts.sort((a, b) => b.price - a.price);
+            } else if (sortOption === 'low') {
+                filteredProducts.sort((a, b) => a.price - b.price);
+            }
+            
+            displayProducts(filteredProducts);
+        }
+
+        // Add a product to the shopping cart
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            const wouldExceedBalance = () => {
+                const existingTotal = calculateTotal();
+                const newTotal = existingTotal + product.price;
+                return newTotal > wallet;
+            };
+            
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                // Check if adding one more would exceed balance
+                if (wouldExceedBalance()) {
+                    showMessage(`Cannot add more. Add money to your wallet first.`, 'error');
+                    return;
+                }
+                existingItem.quantity += 1;
+            } else {
+                // Check if adding this item would exceed balance
+                if (wouldExceedBalance()) {
+                    showMessage(`Insufficient funds in wallet to add this item.`, 'error');
+                    return;
+                }
+                cart.push({
+                    ...product,
+                    quantity: 1
+                });
+            }
+            
+            updateCartDisplay();
+            showMessage(`${product.title} added to cart!`);
+        }
+
+        // Update the cart display
+        function updateCartDisplay() {
+            // Update cart item count badge
+            const itemCount = cart.reduce((total, item) => total + item.quantity, 0);
+            cartCount.textContent = itemCount;
+            
+            // Show empty message if cart is empty
+            if (cart.length === 0) {
+                emptyMsg.classList.remove('hidden');
+                cartList.innerHTML = '';
+            } else {
+                emptyMsg.classList.add('hidden');
+                
+                // Show all items in cart
+                cartList.innerHTML = cart.map(item => `
+                    <div class="flex items-center justify-between p-2 border-b">
+                        <img src="${item.image}" alt="${item.title}" class="w-12 h-12 object-contain">
+                        <div class="flex-1 ml-2">
+                            <p class="font-semibold text-sm">${item.title}</p>
+                            <p class="text-gray-600">BDT ${item.price} × ${item.quantity}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="decrease-quantity bg-gray-200 px-2 rounded" data-id="${item.id}">-</button>
+                            <button class="increase-quantity bg-gray-200 px-2 rounded" data-id="${item.id}">+</button>
+                            <button class="remove-item text-red-500" data-id="${item.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Add click handlers to cart item buttons
+                document.querySelectorAll('.decrease-quantity').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const itemId = parseInt(this.getAttribute('data-id'));
+                        updateItemQuantity(itemId, -1);
+                    });
+                });
+                
+                document.querySelectorAll('.increase-quantity').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const itemId = parseInt(this.getAttribute('data-id'));
+                        updateItemQuantity(itemId, 1);
+                    });
+                });
+                
+                document.querySelectorAll('.remove-item').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const itemId = parseInt(this.getAttribute('data-id'));
+                        removeFromCart(itemId);
+                    });
+                });
+            }
+            
+            // Update the price totals
+            updateCartTotals();
+        }
+
+        // Change quantity of an item in cart
+        function updateItemQuantity(productId, change) {
+            const item = cart.find(item => item.id === productId);
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) {
+                    removeFromCart(productId);
+                } else {
+                    updateCartDisplay();
+                }
+            }
+        }
+
+        // Remove item from cart completely
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            updateCartDisplay();
+        }
+
+        // Update the price totals in cart
+        function updateCartTotals() {
+            const subtotalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const deliveryCharge = 50;
+            const shippingCost = 30;
+            const discountAmount = couponUsed ? subtotalAmount * 0.1 : 0;
+            const totalAmount = subtotalAmount + deliveryCharge + shippingCost - discountAmount;
+            
+            subtotal.textContent = `BDT ${subtotalAmount.toFixed(2)}`;
+            discount.textContent = `-BDT ${discountAmount.toFixed(2)}`;
+            total.textContent = `BDT ${totalAmount.toFixed(2)}`;
+            
+            // Show warning if not enough money in wallet
+            const warningEl = document.getElementById('balanceWarning') || (() => {
+                const el = document.createElement('div');
+                el.id = 'balanceWarning';
+                el.className = 'mt-2 text-center text-red-600 text-sm';
+                total.parentNode.after(el);
+                return el;
+            })();
+            
+            if (totalAmount > wallet) {
+                const needed = totalAmount - wallet;
+                warningEl.textContent = `Add BDT ${needed.toFixed(2)} more to your wallet to complete this purchase.`;
+                warningEl.classList.remove('hidden');
+            } else {
+                warningEl.classList.add('hidden');
+            }
+        }
+        
+        // Calculate total cart value
+        function calculateTotal() {
+            const subtotalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const deliveryCharge = 50;
+            const shippingCost = 30;
+            const discountAmount = couponUsed ? subtotalAmount * 0.1 : 0;
+            return subtotalAmount + deliveryCharge + shippingCost - discountAmount;
+        }
+
+        // Apply coupon code for discount
+        function applyCoupon() {
+            const code = couponInput.value.trim();
+            
+            if (code === 'SMART10') {
+                couponUsed = true;
+                updateCartTotals();
+                showMessage('Coupon applied! 10% discount added.', 'success', cartMessage);
+            } else {
+                showMessage('Invalid coupon code. Please try again.', 'error', cartMessage);
+            }
+        }
+
+        // Process the checkout
+        function processCheckout() {
+            if (cart.length === 0) {
+                showMessage('Your cart is empty. Add some products first.', 'error', cartMessage);
+                return;
+            }
+            
+            const totalAmount = calculateTotal();
+            if (totalAmount > wallet) {
+                const needed = totalAmount - wallet;
+                showMessage(`Insufficient funds. You need BDT ${needed.toFixed(2)} more in your wallet.`, 'error', cartMessage);
+                return;
+            }
+            
+            // Take money from wallet
+            wallet -= totalAmount;
+            updateWalletDisplay();
+            
+            // Clear cart and reset
+            cart = [];
+            couponUsed = false;
+            couponInput.value = '';
+            updateCartDisplay();
+            closeCartModal();
+            showMessage(`Order placed successfully! Paid BDT ${totalAmount.toFixed(2)} from wallet.`);
+        }
+
+        // Open the cart modal
+        function openCart() {
+            cartModal.classList.remove('hidden');
+        }
+
+        // Close the cart modal
+        function closeCartModal() {
+            cartModal.classList.add('hidden');
+        }
+
+        // Load customer reviews
+        function loadReviews() {
+            const reviews = [
+                { 
+                    name: "John D.", 
+                    text: "Great products and fast delivery! Will definitely shop here again.", 
+                    rating: 5 
+                },
+                { 
+                    name: "Sarah M.", 
+                    text: "The quality exceeded my expectations. Customer service was excellent too!", 
+                    rating: 4 
+                },
+                { 
+                    name: "Mike R.", 
+                    text: "Reasonable prices and good variety. My go-to online store now.", 
+                    rating: 5 
+                },
+                { 
+                    name: "Emily D.", 
+                    text: "Had a small issue with my order, but it was resolved quickly. Happy with the service.", 
+                    rating: 4 
+                }
+            ];
+
+            reviewsBox.innerHTML = reviews.map(review => `
+                <div class="min-w-full p-6 text-center">
+                    <div class="bg-white p-6 rounded shadow">
+                        <div class="star-rating text-xl mb-4">
+                            ${generateStarRating(review.rating)}
+                        </div>
+                        <p class="italic mb-4 text-gray-700">"${review.text}"</p>
+                        <p class="font-semibold">- ${review.name}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Show next review
+        function showNextReview() {
+            const totalReviews = reviewsBox.children.length;
+            reviewIndex = (reviewIndex + 1) % totalReviews;
+            updateReviewPosition();
+        }
+
+        // Show previous review
+        function showPrevReview() {
+            const totalReviews = reviewsBox.children.length;
+            reviewIndex = (reviewIndex - 1 + totalReviews) % totalReviews;
+            updateReviewPosition();
+        }
+
+        // Move reviews to show the current one
+        function updateReviewPosition() {
+            reviewsBox.style.transform = `translateX(-${reviewIndex * 100}%)`;
+        }
+
+        // Handle contact form submission
+        function handleContactSubmit(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const message = document.getElementById('message').value;
+            
+            // Make sure all fields are filled
+            if (!name || !email || !message) {
+                showMessage('Please fill in all fields.', 'error');
+                return;
+            }
+            
+            // In a real app, this would send the data to a server
+            contactForm.reset();
+            showMessage('Thank you for your message! We will get back to you soon.');
+        }
+
+        // Show a message to the user
+        function showMessage(text, type = 'success', target = msgBox) {
+            if (!target) return;
+            
+            target.textContent = text;
+            target.className = 'mt-4 p-3 rounded text-center';
+            
+            if (type === 'success') {
+                target.classList.add('bg-green-100', 'text-green-700');
+            } else {
+                target.classList.add('bg-red-100', 'text-red-700');
+            }
+            
+            target.classList.remove('hidden');
+            
+            // Hide message after 3 seconds
+            setTimeout(() => {
+                target.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
